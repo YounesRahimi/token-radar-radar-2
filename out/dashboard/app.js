@@ -287,7 +287,7 @@
       );
       tbody.appendChild(tr);
     });
-    var note = list.length > cap.length ? 'First ' + cap.length + ' of ' + list.length + ' rows shown \u2014 narrow the search or category to see the rest. Select a row for its model and farm plan.' : 'Pre-token protocols, strongest implied value first. Select a row for its model and farm plan.';
+    var note = list.length > cap.length ? 'First ' + cap.length + ' of ' + list.length + ' rows shown — narrow the search or category to see the rest. Select a row for its model and farm plan.' : 'Pre-token protocols, strongest implied value first. Every row announces rank, protocol, TVL and implied value. Select a row for its model and farm plan.';
     return el('div', { class: 'panel' },
       el('div', { class: 'table-wrap' },
         el('table', null,
@@ -428,8 +428,18 @@
     return hit ? hit.rank : -1;
   }
 
+  function syncTitle() {
+    var bits = ['TOKEN_RADAR'];
+    bits.push(state.tab === 'pre-token' ? filtered().length + ' pre-token rows' : DATA.live.length + ' live tokens');
+    if (state.category !== 'all') bits.push(state.category);
+    if (state.q) bits.push('“' + state.q + '”');
+    try { document.title = bits.join(' · '); } catch (e) { /* headless viewer: title is best-effort */ }
+  }
+
+
   function render() {
     app.textContent = '';
+    syncTitle();
     var shell = el('div', { class: 'shell' });
     shell.appendChild(topbar());
     shell.appendChild(hero());
@@ -437,8 +447,8 @@
     shell.appendChild(state.tab === 'pre-token' ? boardTable() : liveTable());
     if (state.tab === 'pre-token') shell.appendChild(explainer());
     shell.appendChild(el('footer', { class: 'footer' },
-      el('span', { text: 'TOKEN_RADAR ' + DATA.model_version + ' \u00b7 snapshot ' + DATA.as_of }),
-      el('span', { text: 'implied value is a model, not a promise \u00b7 offline page, no network' })
+      el('span', { text: 'TOKEN_RADAR ' + DATA.model_version + ' · snapshot ' + DATA.as_of }),
+      el('span', { text: 'implied value is a model, not a promise · offline page, no network' })
     ));
     app.appendChild(shell);
     app.setAttribute('aria-busy', 'false');
