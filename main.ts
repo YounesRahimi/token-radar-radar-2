@@ -21,12 +21,15 @@ const TEXT_MAX_BYTES = 65_536;
 const SHOT_CAPS = { max: 4, max_bytes: 524_288 };
 const SHOT_NAME = /^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$/;
 
-/** Value of `--name <value>` (or `--name=value`), else `fallback`. */
+/** Value of `--name <value>` (or `--name=value`), else `fallback`. Later flags win: `--name a --name b` reads `b`. */
 function flag(name: string, fallback: string): string {
-  const at = process.argv.indexOf(`--${name}`);
-  if (at >= 0 && at + 1 < process.argv.length) return process.argv[at + 1]!;
-  const joined = process.argv.find((a) => a.startsWith(`--${name}=`));
-  return joined === undefined ? fallback : joined.slice(name.length + 3);
+  let seen: string | undefined;
+  for (const a of process.argv) {
+    if (a === `--${name}`) seen = '';
+    else if (a.startsWith(`--${name}=`)) seen = a.slice(name.length + 3);
+    else if (seen === '') seen = a;
+  }
+  return seen === undefined || seen === '' ? fallback : seen;
 }
 
 const inputArg = flag('input', '/input');
@@ -46,7 +49,9 @@ if (bad !== null) {
 }
 
 mkdirSync(dest, { recursive: true });
+// board.json first: the dossier hashes every sibling, so the ranked rows land before anything reads them.
 writeFileSync(join(dest, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
+// data.js next: the shipped dashboard renders exactly this dataset, no fetch and no network.
 writeFileSync(join(dest, 'data.js'), dataScript(radar));
 
 /** Copy one directory's regular files into `to`, skipping dotfiles. */
