@@ -366,7 +366,7 @@
     if (!row) return;
     state.selected = slug;
     writeHash();
-    render();
+    paintSelection();
     dialog.textContent = '';
     var inner = el('div', { class: 'detail-inner' });
     var m = impliedOf(row, DATA.model, catMultOf(row));
@@ -411,6 +411,23 @@
     }
   }
 
+  function paintSelection() {
+    var marked = app.querySelectorAll('tr[data-selected="true"]');
+    for (var i = 0; i < marked.length; i++) marked[i].setAttribute('data-selected', 'false');
+    if (state.selected) {
+      var rows = app.querySelectorAll('tbody tr');
+      for (var j = 0; j < rows.length; j++) {
+        var first = rows[j].querySelector('td');
+        if (first && first.textContent === '#' + selectedRank()) rows[j].setAttribute('data-selected', 'true');
+      }
+    }
+  }
+
+  function selectedRank() {
+    var hit = DATA.rows.filter(function (r) { return r.slug === state.selected; })[0];
+    return hit ? hit.rank : -1;
+  }
+
   function render() {
     app.textContent = '';
     var shell = el('div', { class: 'shell' });
@@ -426,20 +443,19 @@
     app.appendChild(shell);
     app.setAttribute('aria-busy', 'false');
     if (!dialog.isConnected) app.appendChild(dialog);
-    if (state.selected && (!dialog.open || !dialog.querySelector('#detail-title'))) {
-      var row = DATA.rows.filter(function (r) { return r.slug === state.selected; })[0];
-      if (row && state.tab === 'pre-token') openDetail(state.selected);
-    }
+  }
+
+  function openFromHash() {
+    if (!state.selected) return;
+    var row = DATA.rows.filter(function (r) { return r.slug === state.selected; })[0];
+    if (row && state.tab === 'pre-token' && !dialog.open) openDetail(state.selected);
+    else if (!row) { state.selected = null; writeHash(); paintSelection(); }
   }
 
   readHash();
-  // Unknown slugs or categories in the hash reset to the board instead of rendering empty.
   if (state.selected && !DATA.rows.some(function (r) { return r.slug === state.selected; })) state.selected = null;
   render();
-  if (state.selected && dialog && !dialog.open) {
-    var again = DATA.rows.filter(function (r) { return r.slug === state.selected; })[0];
-    if (again) openDetail(state.selected);
-  }
+  openFromHash();
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && dialog.open) dialog.close();
     if (e.key === '/' && document.activeElement !== document.getElementById('q')) {
@@ -449,8 +465,14 @@
     }
   });
   window.addEventListener('hashchange', function () {
-    state = { q: '', category: 'all', tab: state.tab, sort: state.sort, dir: state.dir, selected: null };
+    var keepTab = state.tab;
+    var keepSort = state.sort;
+    var keepDir = state.dir;
+    var dialogWas = dialog.open;
+    state = { q: '', category: 'all', tab: keepTab, sort: keepSort, dir: keepDir, selected: null };
     readHash();
     render();
+    if (state.selected) openFromHash();
+    else if (dialogWas && dialog.open) dialog.close();
   });
 })();

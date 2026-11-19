@@ -453,13 +453,9 @@
   }
 
   readHash();
-  // Unknown slugs or categories in the hash reset to the board instead of rendering empty.
   if (state.selected && !DATA.rows.some(function (r) { return r.slug === state.selected; })) state.selected = null;
   render();
-  if (state.selected && dialog && !dialog.open) {
-    var again = DATA.rows.filter(function (r) { return r.slug === state.selected; })[0];
-    if (again) openDetail(state.selected);
-  }
+  openFromHash();
   window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && dialog.open) dialog.close();
     if (e.key === '/' && document.activeElement !== document.getElementById('q')) {
@@ -469,8 +465,14 @@
     }
   });
   window.addEventListener('hashchange', function () {
-    state = { q: '', category: 'all', tab: state.tab, sort: state.sort, dir: state.dir, selected: null };
+    var keepTab = state.tab;
+    var keepSort = state.sort;
+    var keepDir = state.dir;
+    var dialogWas = dialog.open;
+    state = { q: '', category: 'all', tab: keepTab, sort: keepSort, dir: keepDir, selected: null };
     readHash();
     render();
+    if (state.selected) openFromHash();
+    else if (dialogWas && dialog.open) dialog.close();
   });
 })();
