@@ -1,9 +1,10 @@
 // Token radar runner: one sealed snapshot in, a ranked board plus a static page out.
-// The pipeline scores every pre-token protocol with lib/model.ts, persists the
-// ranked rows and the dashboard dataset, stages the dashboard page and the
-// screenshots beside them, and seals the run with the dossier the judge reads.
-// The page never phones home: dashboard/index.html, app.css and app.js render
-// data.js with no framework and no network at all.
+//
+// The pipeline scores every pre-token protocol with the model in lib/model.ts,
+// saves the ranked rows and the dashboard dataset, stages the dashboard page
+// and the screenshots beside them, then seals the run with the dossier that the
+// judge reads. The shipped page is fully offline: dashboard/index.html, app.css
+// and app.js render data.js with no framework and no network calls at all.
 //
 // Local equivalent of the grader's container:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input ../kit/input/snapshot.json
@@ -49,12 +50,12 @@ if (refuse !== null) {
   process.stderr.write(`token radar: refusing a board the gate rejects: ${refuse}\n`);
   process.exit(1);
 }
-// One refusal point: nothing below runs unless the board clears every gate row.
+// Single refusal point: nothing below runs unless the board clears every gate row.
 
 mkdirSync(target, { recursive: true });
-// board.json first: the dossier hashes every sibling, so the ranked rows land before anything reads them.
+// board.json lands first: the dossier hashes every sibling, so ranked rows exist before anything reads them.
 writeFileSync(join(target, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
-// data.js next: the shipped dashboard renders exactly this dataset, no fetch and no network.
+// data.js follows: the shipped dashboard renders exactly this dataset, with no fetch and no network.
 writeFileSync(join(target, 'data.js'), dataScript(radar));
 
 /** Stage one directory's regular files into `to`; dotfiles stay behind. Returns what landed. */
@@ -85,7 +86,7 @@ for (const name of shots) {
   }
 }
 
-// The dossier closes the run: the scorer rebuilds it byte for byte from this output.
+// The dossier closes the run: the scorer rebuilds it byte for byte from this output tree.
 writeFileSync(join(target, 'dossier.json'), buildDossier(target, { text_max_bytes: MAX_TEXT_BYTES, screenshots: SHOT_LIMITS, dashboard: { max_files: 400, max_bytes: 4_194_304 } }));
 
 process.stdout.write(
